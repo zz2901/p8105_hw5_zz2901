@@ -1,0 +1,28 @@
+---
+title: "Homework 5 zz2901"
+author: "Troy Zhou"
+output: github_document
+---
+
+```{r load_package, echo = FALSE, message=FALSE}
+library(tidyverse)
+library(patchwork)
+library(ggridges)
+options(tibble.print_min = 5)
+
+
+library(p8105.datasets)
+
+knitr::opts_chunk$set(
+	echo = TRUE,
+	warning = FALSE,
+	fig.width = 8, 
+  fig.height = 6,
+  out.width = "90%"
+)
+
+theme_set(theme_minimal() + theme(legend.position = "bottom"))
+
+```
+
+## Problem 1
