@@ -26,3 +26,104 @@ theme_set(theme_minimal() + theme(legend.position = "bottom"))
 ```
 
 ## Problem 1
+
+## Problem 2
+
+The Washington Post has gathered data on homicides in 50 large U.S. cities and made the data available through a GitHub repository here. You can read their accompanying article here.
+
+```{r read_homicide_data, echo = FALSE, message=FALSE}
+
+homicide_df <- read_csv("data/homicide-data.csv")
+
+```
+
+
+Describe the raw data. Create a city_state variable (e.g. “Baltimore, MD”) and then summarize within cities to obtain the total number of homicides and the number of unsolved homicides (those for which the disposition is “Closed without arrest” or “Open/No arrest”).
+
+```{r summarize_homicide}
+
+homicide_mut <- homicide_df %>% 
+  mutate(victim_age = recode(victim_age,"Unknown"=""),
+         victim_age = as.numeric(victim_age),
+         city_state = paste0(city, ", ", state))
+
+homicide_sum <- homicide_mut %>% 
+  group_by(city_state) %>% 
+  summarize(numb_unsolved = sum(disposition == "Closed without arrest" | disposition == "Open/No arrest"),
+    total_homicide = n())
+  
+
+
+```
+
+* The raw data has ``r nrow(homicide_df)`` observations and ``r ncol(homicide_df)`` variables. After adding the new city_state variable, there are ``r ncol(homicide_df)+1`` variables.
+
+* The `victim_age` variable had some missing observations with `Unknown`. As a result it becomes a `chr` type variable. 
+
+  * the value was substituted with `NA` and type changed to `num`.
+  
+  * there were no other inconsistent data types
+
+* The latitude variable `lat` and longitude variable `lon` had some missing values recorded in `NA`.
+
+* The total number of homicides and the number of unsolved homicides for each city can be seen in the following table: `r homicide_sum %>% knitr::kable()`
+
+For the city of Baltimore, MD, use the prop.test function to estimate the proportion of homicides that are unsolved; save the output of prop.test as an R object, apply the broom::tidy to this object and pull the estimated proportion and confidence intervals from the resulting tidy dataframe.
+
+```{r}
+baltimore_test <- homicide_sum %>%
+  filter(city_state == "Baltimore, MD") 
+
+baltimore_output <- prop.test(baltimore_test$numb_unsolved, baltimore_test$total_homicide) %>% 
+  broom::tidy()
+
+baltimore_output %>% 
+  pull(estimate)
+
+baltimore_output %>% 
+  pull(conf.low)
+
+baltimore_output %>% 
+  pull(conf.high)
+
+```
+
+* The object `baltimore_output` containing the tidy output was created. The estimated proportion was ``r baltimore_output %>% pull(conf.low)``, the confidence interval was (``r baltimore_output %>% pull(conf.low)``, ``r baltimore_output %>% pull(conf.low)``)
+
+Now run prop.test for each of the cities in your dataset, and extract both the proportion of unsolved homicides and the confidence interval for each. Do this within a “tidy” pipeline, making use of purrr::map, purrr::map2, list columns and unnest as necessary to create a tidy dataframe with estimated proportions and CIs for each city.
+
+```{r}
+homicide_prop <- homicide_sum %>% 
+  mutate(proportion = purrr::map2(numb_unsolved, total_homicide, prop.test),
+         proportion = purrr::map(proportion, broom::tidy)) %>% 
+  unnest(proportion) %>% 
+  select(1:4, 8, 9)
+  
+```
+
+* A tidy dataframe with estimated proportions and CIs for each city was created and called `homicide_prop`.
+
+```{r}
+homicide_prop
+```
+
+
+Create a plot that shows the estimates and CIs for each city – check out geom_errorbar for a way to add error bars based on the upper and lower limits. Organize cities according to the proportion of unsolved homicides.
+
+```{r}
+homicide_prop %>% 
+  ggplot(aes(reorder(city_state,estimate), estimate)) +       
+  geom_point(aes(color=city_state)) +
+  geom_errorbar(aes(ymin = conf.low, ymax = conf.high))+
+    labs(
+    title = "Problem 2, plot of unsolved homicide proportion estimates and CIs for each city ",
+    x = "City, State",
+    y = "Proportion Estimate") +
+   theme(axis.text.x = element_text(angle = 90),
+         legend.position = "none")
+```
+
+
+## Problem 3
+
+
